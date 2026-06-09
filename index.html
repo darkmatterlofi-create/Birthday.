@@ -20,7 +20,7 @@
             position: relative;
         }
         
-        /* Scene 1 Layout - Replicating 1000088972_3.png Exactly */
+        /* Screen 1 - Perfect Layout & Spacing to Prevent Text Overlap */
         #ui-container {
             position: absolute;
             top: 50%;
@@ -30,58 +30,60 @@
             align-items: flex-end;
             cursor: pointer;
             z-index: 10;
-            transition: opacity 0.5s ease;
-            width: 340px;
+            transition: opacity 0.4s ease;
+            width: 360px; /* Safe width for proper spacing */
         }
         .heart-wrapper {
             position: relative;
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
             flex-shrink: 0;
         }
         .heart-btn {
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             background-color: #ffb7c5;
             position: absolute;
+            top: 5px;
+            left: 5px;
             transform: rotate(-45deg);
-            animation: beat 1.8s infinite ease-in-out;
+            animation: beat 1.4s infinite ease-in-out;
+            transform-origin: center;
         }
         .heart-btn::before, .heart-btn::after {
             content: '';
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             background-color: #ffb7c5;
             border-radius: 50%;
             position: absolute;
         }
-        .heart-btn::before { top: -30px; left: 0; }
-        .heart-btn::after { left: 30px; top: 0; }
+        .heart-btn::before { top: -275x; top: -27.5px; left: 0; }
+        .heart-btn::after { left: 27.5px; top: 0; }
 
         @keyframes beat {
             0%, 100% { transform: scale(1) rotate(-45deg); }
-            50% { transform: scale(1.06) rotate(-45deg); }
+            50% { transform: scale(1.08) rotate(-45deg); }
         }
         
-        /* Content Panel Layout matching the image exactly */
         .content-panel {
             display: flex;
             flex-direction: column;
             width: 100%;
-            margin-left: -5px; /* Pulls the line path start perfectly into the heart edge */
+            margin-left: 15px; /* Perfect gap so heart beat never touches text */
             position: relative;
         }
         .text-box {
             display: flex;
             flex-direction: column;
             color: #ffffff;
-            padding-left: 15px; /* Creates safe gap so text never overlaps the heart */
-            margin-bottom: 2px;
+            padding-left: 20px; 
+            margin-bottom: 0px;
         }
         .text-line1 {
             font-size: 19px;
             font-weight: 400;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             letter-spacing: 0.5px;
         }
         .text-line2 {
@@ -91,12 +93,12 @@
             white-space: nowrap;
         }
         
-        /* Exact SVG Line Connection Design from 1000088972_3.png */
+        /* Custom Line Path matching 1000088972.png */
         .custom-wireframe {
             position: relative;
-            width: 280px;
-            height: 25px;
-            margin-top: -12px; /* Pulls line up to align perfectly with heart's lower-right quadrant */
+            width: 100%;
+            height: 30px;
+            margin-top: -8px;
         }
         .custom-wireframe svg {
             position: absolute;
@@ -106,7 +108,6 @@
             height: 100%;
         }
 
-        /* Canvas Render Frame */
         canvas {
             position: absolute;
             top: 0;
@@ -117,7 +118,7 @@
             z-index: 1;
         }
         
-        /* Left Messages Panel Design */
+        /* Message Panel Styling */
         #message-panel {
             position: absolute;
             left: 8%;
@@ -137,7 +138,7 @@
             font-weight: 400;
             opacity: 0;
             transform: translateY(10px);
-            transition: opacity 1.5s ease, transform 1.5s ease;
+            transition: opacity 0.8s ease, transform 0.8s ease;
             color: #fff0f3;
             text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.9);
         }
@@ -154,9 +155,8 @@
 </head>
 <body>
 
-    <audio id="bgMusic" src="music.mp3" loop></audio>
+    <audio id="bgMusic" src="music.mp3"></audio>
 
-    <!-- UI Overlay matching 1000088972_3.png -->
     <div id="ui-container">
         <div class="heart-wrapper">
             <div class="heart-btn"></div>
@@ -167,9 +167,8 @@
                 <span class="text-line2">Birthday Queen !</span>
             </div>
             <div class="custom-wireframe">
-                <!-- SVG path starting from heart tip area, bending down-right, then straight right -->
-                <svg viewBox="0 0 280 25" preserveAspectRatio="none">
-                    <path d="M 0 0 L 18 18 L 280 18" stroke="#ffb7c5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <svg viewBox="0 0 280 30" preserveAspectRatio="none">
+                    <path d="M 0 0 L 22 22 L 280 22" stroke="#ffb7c5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
                 </svg>
             </div>
         </div>
@@ -200,7 +199,7 @@
 
         let state = 'waiting'; 
         let animationStartTime = 0;
-        let fallingHeart = { x: 0, y: 0, vy: 0, gravity: 0.4, size: 22 };
+        let fallingHeart = { x: 0, y: 0, vy: 0, gravity: 0.5, size: 24 };
         let groundY = canvas.height * 0.85;
         
         let treeCenterX = canvas.width / 2;
@@ -210,36 +209,52 @@
         let branches = [];
         let leaves = [];
         let continuousFallingHearts = [];
-        const leafColors = ['#ff4d6d', '#ff758f', '#ff85a1', '#f72585', '#ffb7c5', '#ffbe0b', '#ff007f'];
+        // Fixed Colors: Red, Orange, Yellow, Pink
+        const leafColors = ['#ff0f39', '#ff7300', '#ffcc00', '#ff758f', '#ffb7c5', '#ff4d6d'];
 
-        function drawCanvasHeart(x, y, size, color) {
+        // Math algorithm to draw a high-fidelity perfect Heart shape on Canvas
+        function drawPerfectHeart(x, y, size, color) {
             ctx.save();
             ctx.beginPath();
             ctx.translate(x, y);
-            ctx.rotate(-Math.PI / 4);
             ctx.fillStyle = color;
-            ctx.moveTo(0, 0);
-            ctx.arc(size / 2, 0, size / 2, 0, Math.PI, true);
-            ctx.arc(0, -size / 2, size / 2, 0, Math.PI, true);
-            ctx.lineTo(0, 0);
+            
+            // Top point center of heart split
+            ctx.moveTo(0, -size * 0.3);
+            // Left curve
+            ctx.bezierCurveTo(-size * 0.5, -size * 0.8, -size * 1.1, -size * 0.4, -size * 1.1, size * 0.1);
+            ctx.bezierCurveTo(-size * 1.1, size * 0.55, -size * 0.5, size * 0.9, 0, size * 1.3);
+            // Right curve
+            ctx.bezierCurveTo(size * 0.5, size * 0.9, size * 1.1, size * 0.55, size * 1.1, size * 0.1);
+            ctx.bezierCurveTo(size * 1.1, -size * 0.4, size * 0.5, -size * 0.8, 0, -size * 0.3);
+            
             ctx.closePath();
             ctx.fill();
             ctx.restore();
         }
 
+        // Instant audio setup and sync reset logic
         uiContainer.addEventListener('click', () => {
             if (state !== 'waiting') return;
-            bgMusic.play().catch(e => console.log(e));
+            
+            // Instant Music Trigger
+            bgMusic.currentTime = 0;
+            bgMusic.play().catch(e => console.log("Audio play failed:", e));
 
             uiContainer.style.opacity = '0';
-            setTimeout(() => uiContainer.style.display = 'none', 500);
+            setTimeout(() => uiContainer.style.display = 'none', 400);
 
             fallingHeart.x = canvas.width / 2;
             fallingHeart.y = canvas.height / 3;
-            fallingHeart.vy = 1;
+            fallingHeart.vy = 2;
             
             state = 'falling';
             requestAnimationFrame(animate);
+        });
+
+        // Track looped audio timeline cleanly
+        bgMusic.addEventListener('ended', () => {
+            resetWholeTimeline();
         });
 
         class Branch {
@@ -263,7 +278,7 @@
                 ctx.moveTo(this.startX + offsetX, this.startY);
                 ctx.lineTo(curX + offsetX, curY);
                 ctx.strokeStyle = '#ffb7c5';
-                ctx.lineWidth = this.maxThickness * (1 - progress * 0.2);
+                ctx.lineWidth = this.maxThickness * (1 - progress * 0.25);
                 ctx.lineCap = 'round';
                 ctx.stroke();
             }
@@ -284,12 +299,12 @@
                 let curSize = this.targetSize * progress;
 
                 if (curSize > 0) {
-                    drawCanvasHeart(this.relX + offsetX, this.relY, curSize, this.color);
+                    drawPerfectHeart(this.relX + offsetX, this.relY, curSize, this.color);
                 }
             }
         }
 
-        // Expanded tree architecture configuration mapped over an 11-Minute timeframe
+        // Recursive mathematical generation for the tree structure mapped strictly within 11 seconds budget
         function buildTreeStructure(startX, startY, length, angle, thickness, depth, currentDelay) {
             if (depth === 0) return;
 
@@ -299,45 +314,68 @@
             let relStartX = startX - treeCenterX;
             let relEndX = endX - treeCenterX;
 
-            // Highly extended scale timing configurations for an 11-minute total lifespan
-            let branchGrowTime = 25000 + (7 - depth) * 8000; 
+            // Strict distribution to guarantee full structural expansion across 11 seconds
+            let branchGrowTime = 250 + (6 - depth) * 120; 
             branches.push(new Branch(relStartX, startY, relEndX, endY, thickness, currentDelay, branchGrowTime));
 
             let nextDelay = currentDelay + branchGrowTime * 0.55;
 
             if (depth <= 4) {
-                let leavesCount = (5 - depth) * 4;
+                let leavesCount = (5 - depth) * 5;
                 for (let i = 0; i < leavesCount; i++) {
-                    let rx = relEndX + (Math.random() - 0.5) * 45;
-                    let ry = endY + (Math.random() - 0.5) * 45;
-                    let size = Math.random() * 3 + 4.5;
+                    let rx = relEndX + (Math.random() - 0.5) * 55;
+                    let ry = endY + (Math.random() - 0.5) * 55;
+                    let size = Math.random() * 2 + 3.5;
                     let color = leafColors[Math.floor(Math.random() * leafColors.length)];
                     
-                    // Staggered slow blooming sequence starts
-                    let leafStart = currentDelay + branchGrowTime + Math.random() * 180000; 
-                    let leafBloomDuration = 40000 + Math.random() * 30000;
+                    // Bloom is strategically scaled to match the growth milestones
+                    let leafStart = currentDelay + branchGrowTime + Math.random() * 2200; 
+                    let leafBloomDuration = 800 + Math.random() * 700;
                     leaves.push(new Leaf(rx, ry, size, color, leafStart, leafBloomDuration));
                 }
             }
 
             let branchesNum = 3;
             for (let i = 0; i < branchesNum; i++) {
-                let vAngle = (Math.random() - 0.5) * 0.55;
-                let nextAngle = angle + (i - 1) * 0.42 + vAngle;
-                let nextLength = length * (0.72 + Math.random() * 0.08);
+                let vAngle = (Math.random() - 0.5) * 0.5;
+                let nextAngle = angle + (i - 1) * 0.4 + vAngle;
+                let nextLength = length * (0.7 + Math.random() * 0.08);
                 buildTreeStructure(endX, endY, nextLength, nextAngle, thickness * 0.65, depth - 1, nextDelay);
             }
         }
 
-        // Messages timeline calibrated to run over exactly 9 Minutes (540,000 Milliseconds)
+        // Precise incremental execution map for messages over the final 9 seconds
+        let textTimeouts = [];
         function triggerTextTimeline() {
-            const delays = [0, 108000, 216000, 324000, 432000]; 
+            // Strict pacing breakdown matching 9000ms total budget
+            const delays = [0, 1600, 3200, 5000, 6800]; 
             for (let i = 1; i <= 5; i++) {
-                setTimeout(() => {
+                let t = setTimeout(() => {
                     const el = document.getElementById(`msg${i}`);
                     if (el) el.classList.add('visible');
                 }, delays[i - 1]);
+                textTimeouts.push(t);
             }
+        }
+
+        // Loop execution resets structural parameters to repeat perfectly at 20000ms
+        function resetWholeTimeline() {
+            textTimeouts.forEach(t => clearTimeout(t));
+            textTimeouts = [];
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`msg${i}`);
+                if (el) el.classList.remove('visible');
+            }
+            branches = [];
+            leaves = [];
+            continuousFallingHearts = [];
+            currentTreeX = treeCenterX;
+            
+            bgMusic.currentTime = 0;
+            bgMusic.play().catch(e => console.log(e));
+            
+            animationStartTime = performance.now();
+            buildTreeStructure(treeCenterX, groundY, canvas.height * 0.16, -Math.PI / 2, 11, 6, 0);
         }
 
         function animate(timestamp) {
@@ -347,6 +385,7 @@
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Ground base line rendering
             ctx.beginPath();
             ctx.moveTo(canvas.width * 0.05, groundY);
             ctx.lineTo(canvas.width * 0.95, groundY);
@@ -363,49 +402,65 @@
                     state = 'runningTimeline';
                     animationStartTime = timestamp; 
                     elapsed = 0;
-                    buildTreeStructure(treeCenterX, groundY, canvas.height * 0.15, -Math.PI / 2, 10.5, 6, 0);
+                    // Trigger structural generation at root node zero
+                    buildTreeStructure(treeCenterX, groundY, canvas.height * 0.16, -Math.PI / 2, 11, 6, 0);
                 }
-                drawCanvasHeart(fallingHeart.x, fallingHeart.y, fallingHeart.size, '#ffb7c5');
+                drawPerfectHeart(fallingHeart.x, fallingHeart.y, fallingHeart.size, '#ffb7c5');
             }
 
             if (state === 'runningTimeline') {
                 
-                // CONTROL TIMELINE: Tree grows & slides up until the 11th Minute (660,000 ms) mark
-                if (elapsed >= 600000 && elapsed < 660000) { // Sliding shifts smoothly between 10th and 11th minute
-                    let slideProgress = (elapsed - 600000) / 60000;
-                    let ease = slideProgress < 0.5 ? 2 * slideProgress * slideProgress : -1 + (4 - 2 * slideProgress) * slideProgress;
+                // Absolute structural auto-reset when total synced timeline hits 20000ms (20 seconds)
+                if (elapsed >= 20000) {
+                    resetWholeTimeline();
+                    requestAnimationFrame(animate);
+                    return;
+                }
+
+                // Smooth positional interpolation between the 8.5s and 11s marker
+                if (elapsed >= 8500 && elapsed < 11000) { 
+                    let slideProgress = (elapsed - 8500) / 2500;
+                    // Ease inside sine profile
+                    let ease = Math.sin((slideProgress * Math.PI) / 2);
                     currentTreeX = treeCenterX + (targetTreeX - treeCenterX) * ease;
-                } else if (elapsed >= 660000) {
+                } else if (elapsed >= 11000) {
                     currentTreeX = targetTreeX;
-                    if (elapsed >= 660000 && elapsed < 660100) {
-                        triggerTextTimeline(); // Text message layer initializes at exactly 11:00
+                    // Trigger text cascade at the exact 11th second boundary marker
+                    if (elapsed >= 11000 && elapsed < 11040 && textTimeouts.length === 0) {
+                        triggerTextTimeline();
                     }
                 }
 
+                // Render tree assets dynamically
                 branches.forEach(b => b.draw(currentTreeX, elapsed));
                 leaves.forEach(l => l.draw(currentTreeX, elapsed));
 
-                if (elapsed >= 620000) {
-                    if (continuousFallingHearts.length < 5 && Math.random() < 0.04) {
+                // Continuous side falling wind animation engine
+                if (elapsed >= 6000) {
+                    if (continuousFallingHearts.length < 12 && Math.random() < 0.06) {
                         let randomLeaf = leaves[Math.floor(Math.random() * leaves.length)];
                         if (randomLeaf) {
                             continuousFallingHearts.push({
                                 x: randomLeaf.relX + currentTreeX,
                                 y: randomLeaf.relY,
-                                size: Math.random() * 2.5 + 3.5,
-                                vy: Math.random() * 0.4 + 0.6,
-                                vx: (Math.random() - 0.5) * 0.25,
+                                size: Math.random() * 2 + 3,
+                                vy: Math.random() * 0.5 + 0.8,
+                                swingSpeed: Math.random() * 0.02 + 0.015,
+                                swingRange: Math.random() * 1.5 + 1.2,
+                                timeOffset: Math.random() * 100,
                                 color: leafColors[Math.floor(Math.random() * leafColors.length)]
                             });
                         }
                     }
 
+                    // Loop to update position of wind blown leaves smoothly
                     for (let i = continuousFallingHearts.length - 1; i >= 0; i--) {
                         let p = continuousFallingHearts[i];
                         p.y += p.vy;
-                        p.x += p.vx;
+                        // Math.sin configuration builds a gentle sway wind behavior
+                        p.x += Math.sin(p.y * p.swingSpeed + p.timeOffset) * p.swingRange * 0.4;
                         
-                        drawCanvasHeart(p.x, p.y, p.size, p.color);
+                        drawPerfectHeart(p.x, p.y, p.size, p.color);
 
                         if (p.y >= groundY) {
                             continuousFallingHearts.splice(i, 1);
