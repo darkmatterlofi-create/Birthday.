@@ -19,63 +19,87 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             position: relative;
         }
+        /* Scene 1 Layout - Match Image Exactly */
         #ui-container {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             display: flex;
-            align-items: flex-end;
+            align-items: flex-start;
             cursor: pointer;
-            padding-bottom: 20px;
-            transition: opacity 0.4s ease;
             z-index: 10;
+            transition: opacity 0.5s ease;
+            width: 320px;
         }
         .heart-btn {
-            width: 65px;
-            height: 65px;
+            width: 60px;
+            height: 60px;
             background-color: #ffb7c5;
             position: relative;
             transform: rotate(-45deg);
             animation: beat 1.8s infinite ease-in-out;
-            margin-right: 20px;
             flex-shrink: 0;
+            margin-top: -15px; /* Alignment adjustment */
         }
         .heart-btn::before, .heart-btn::after {
             content: '';
-            width: 65px;
-            height: 65px;
+            width: 60px;
+            height: 60px;
             background-color: #ffb7c5;
             border-radius: 50%;
             position: absolute;
         }
-        .heart-btn::before { top: -32px; left: 0; }
-        .heart-btn::after { left: 32px; top: 0; }
+        .heart-btn::before { top: -30px; left: 0; }
+        .heart-btn::after { left: 30px; top: 0; }
 
         @keyframes beat {
             0%, 100% { transform: scale(1) rotate(-45deg); }
-            50% { transform: scale(1.08) rotate(-45deg); }
+            50% { transform: scale(1.06) rotate(-45deg); }
         }
-        .text-container {
+        
+        /* Custom Angular Line Layout from User Image */
+        .design-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-left: 10px;
+        }
+        .text-box {
             display: flex;
             flex-direction: column;
             color: #ffffff;
-            border-bottom: 3px solid #ffb7c5;
-            padding-right: 40px;
-            padding-bottom: 5px;
+            padding-left: 5px;
+            margin-bottom: 5px;
         }
         .text-line1 {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 400;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
             letter-spacing: 0.5px;
         }
         .text-line2 {
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 500;
             letter-spacing: 0.5px;
             white-space: nowrap;
         }
+        /* The Exact Geometric Shape Component */
+        .custom-wireframe {
+            position: relative;
+            width: 250px;
+            height: 25px;
+        }
+        .custom-wireframe svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Canvas Layer */
         canvas {
             position: absolute;
             top: 0;
@@ -85,11 +109,12 @@
             display: block;
             z-index: 1;
         }
+        /* Left Side Messages Display Container */
         #message-panel {
             position: absolute;
             left: 8%;
             top: 15%;
-            width: 45%;
+            width: 46%;
             height: 70%;
             display: flex;
             flex-direction: column;
@@ -98,14 +123,15 @@
             color: #ffffff;
         }
         .msg-line {
-            font-size: 17px;
+            font-size: 15px;
             line-height: 1.6;
             margin-bottom: 18px;
             font-weight: 400;
             opacity: 0;
             transform: translateY(10px);
-            transition: opacity 0.8s ease, transform 0.8s ease;
+            transition: opacity 1s ease, transform 1s ease;
             color: #fff0f3;
+            text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.9);
         }
         .msg-line.visible {
             opacity: 1;
@@ -114,7 +140,7 @@
         .msg-highlight {
             color: #ffb7c5;
             font-weight: 600;
-            font-size: 22px;
+            font-size: 21px;
         }
     </style>
 </head>
@@ -124,9 +150,16 @@
 
     <div id="ui-container">
         <div class="heart-btn"></div>
-        <div class="text-container">
-            <span class="text-line1">Click Me:)</span>
-            <span class="text-line2">Birthday Queen !</span>
+        <div class="design-wrapper">
+            <div class="text-box">
+                <span class="text-line1">Click Me:)</span>
+                <span class="text-line2">Birthday Queen !</span>
+            </div>
+            <div class="custom-wireframe">
+                <svg viewBox="0 0 250 25" preserveAspectRatio="none">
+                    <path d="M 0 0 L 15 15 L 250 15" stroke="#ffb7c5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -153,6 +186,7 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
+        // Screen Wake Lock Mechanism to keep mobile screen constantly active
         let wakeLock = null;
         async function requestWakeLock() {
             try {
@@ -164,14 +198,20 @@
             }
         }
         window.addEventListener('load', requestWakeLock);
+        document.addEventListener('visibilitychange', () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
 
-        let state = 'waiting';
-        let fallingHeart = { x: 0, y: 0, vy: 0, gravity: 0.5, size: 22 };
+        // Application State Management
+        let state = 'waiting'; // waiting -> falling -> growing -> blooming -> shifting -> finished
+        let fallingHeart = { x: 0, y: 0, vy: 0, gravity: 0.4, size: 22 };
         let groundY = canvas.height * 0.85;
-
+        
         let treeCenterX = canvas.width / 2;
         let currentTreeX = canvas.width / 2;
-        let targetTreeX = canvas.width * 0.72;
+        let targetTreeX = canvas.width * 0.82; // Completely clear space for text
         let shiftProgress = 0;
 
         let branches = [];
@@ -196,16 +236,16 @@
 
         uiContainer.addEventListener('click', () => {
             if (state !== 'waiting') return;
-
-            bgMusic.play().catch(e => console.log(e));
+            
+            bgMusic.play().catch(e => console.log("Audio trigger interaction failed:", e));
 
             uiContainer.style.opacity = '0';
-            setTimeout(() => uiContainer.style.display = 'none', 400);
+            setTimeout(() => uiContainer.style.display = 'none', 500);
 
             fallingHeart.x = canvas.width / 2;
-            fallingHeart.y = canvas.height / 2;
+            fallingHeart.y = canvas.height / 3;
             fallingHeart.vy = 1;
-
+            
             state = 'falling';
             animate();
         });
@@ -217,7 +257,7 @@
                 this.endX = endX;
                 this.endY = endY;
                 this.maxThickness = maxThickness;
-                this.duration = duration;
+                this.duration = duration; // Increased for romantic slow effect
                 this.currentFrame = 0;
                 this.currentX = startX;
                 this.currentY = startY;
@@ -247,12 +287,12 @@
 
         class Leaf {
             constructor(relX, relY, targetSize, color, delay) {
-                this.relX = relX;
+                this.relX = relX; 
                 this.relY = relY;
                 this.targetSize = targetSize;
                 this.currentSize = 0;
                 this.color = color;
-                this.delay = delay;
+                this.delay = delay; // Multiplied delay factor for slow beautiful bloom
             }
             update() {
                 if (this.delay > 0) {
@@ -260,7 +300,7 @@
                     return;
                 }
                 if (this.currentSize < this.targetSize) {
-                    this.currentSize += 0.5;
+                    this.currentSize += 0.08; // Extremely slow growth speed for perfect aesthetics
                 }
             }
             draw(offsetX) {
@@ -279,16 +319,19 @@
             let relStartX = startX - treeCenterX;
             let relEndX = endX - treeCenterX;
 
-            branches.push(new Branch(relStartX, startY, relEndX, endY, thickness, 15 + depth * 3));
+            // Slow growth duration assigned to branches
+            let branchDuration = 45 + (7 - depth) * 15; 
+            branches.push(new Branch(relStartX, startY, relEndX, endY, thickness, branchDuration));
 
             if (depth <= 4) {
-                let clusterCount = (5 - depth) * 5;
+                let clusterCount = (5 - depth) * 4;
                 for (let i = 0; i < clusterCount; i++) {
-                    let rx = relEndX + (Math.random() - 0.5) * 40;
-                    let ry = endY + (Math.random() - 0.5) * 40;
-                    let size = Math.random() * 4 + 5;
+                    let rx = relEndX + (Math.random() - 0.5) * 45;
+                    let ry = endY + (Math.random() - 0.5) * 45;
+                    let size = Math.random() * 3 + 4.5;
                     let color = leafColors[Math.floor(Math.random() * leafColors.length)];
-                    let delay = Math.random() * 30;
+                    // Staggered long delays for real premium look
+                    let delay = (5 - depth) * 45 + Math.random() * 120; 
                     leaves.push(new Leaf(rx, ry, size, color, delay));
                 }
             }
@@ -297,13 +340,14 @@
             for (let i = 0; i < numBranches; i++) {
                 let angleVariation = (Math.random() - 0.5) * 0.55;
                 let nextAngle = angle + (i - 1) * 0.42 + angleVariation;
-                let nextLength = length * (0.7 + Math.random() * 0.1);
+                let nextLength = length * (0.72 + Math.random() * 0.08);
                 generateTreeData(endX, endY, nextLength, nextAngle, thickness * 0.65, depth - 1);
             }
         }
 
+        // Sequential text displaying adjusted nicely inside the timeline
         function startLeftMessagesTimeline() {
-            const delays = [200, 2800, 5600, 8800, 11800];
+            const delays = [200, 2500, 5000, 7800, 10500]; 
             for (let i = 1; i <= 5; i++) {
                 setTimeout(() => {
                     const el = document.getElementById(`msg${i}`);
@@ -316,6 +360,7 @@
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Base straight horizontal setup ground border line
             ctx.beginPath();
             ctx.moveTo(canvas.width * 0.05, groundY);
             ctx.lineTo(canvas.width * 0.95, groundY);
@@ -323,6 +368,7 @@
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
+            // 1. FALLING STATE
             if (state === 'falling') {
                 fallingHeart.vy += fallingHeart.gravity;
                 fallingHeart.y += fallingHeart.vy;
@@ -330,11 +376,13 @@
                 if (fallingHeart.y >= groundY) {
                     fallingHeart.y = groundY;
                     state = 'growing';
-                    generateTreeData(treeCenterX, groundY, canvas.height * 0.16, -Math.PI / 2, 11, 6);
+                    // Deep 6 level hierarchy for thick premium foliage distribution
+                    generateTreeData(treeCenterX, groundY, canvas.height * 0.15, -Math.PI / 2, 10.5, 6);
                 }
                 drawCanvasHeart(fallingHeart.x, fallingHeart.y, fallingHeart.size, '#ffb7c5');
             }
 
+            // 2. RENDERING TREE ARCHITECTURE STATES
             if (state === 'growing' || state === 'blooming' || state === 'shifting' || state === 'finished') {
                 let allBranchesDone = true;
 
@@ -359,28 +407,30 @@
                     state = 'shifting';
                 }
 
+                // 3. SMOOTH RIGHT SIDE SHIFT STATE
                 if (state === 'shifting') {
                     if (shiftProgress < 1) {
-                        shiftProgress += 0.025;
+                        shiftProgress += 0.015; // Smooth cinematic ease speed
                         let ease = shiftProgress < 0.5 ? 2 * shiftProgress * shiftProgress : -1 + (4 - 2 * shiftProgress) * shiftProgress;
                         currentTreeX = treeCenterX + (targetTreeX - treeCenterX) * ease;
                     } else {
                         currentTreeX = targetTreeX;
                         state = 'finished';
-                        startLeftMessagesTimeline();
+                        startLeftMessagesTimeline(); 
                     }
                 }
 
+                // 4. CONTINUOUS SLOW FALLING HEARTS FROM TREE (4-5 Active Hearts Loop)
                 if (state === 'shifting' || state === 'finished') {
-                    if (continuousFallingHearts.length < 5 && Math.random() < 0.04) {
+                    if (continuousFallingHearts.length < 5 && Math.random() < 0.03) {
                         let randomLeaf = leaves[Math.floor(Math.random() * leaves.length)];
                         if (randomLeaf && randomLeaf.currentSize >= randomLeaf.targetSize) {
                             continuousFallingHearts.push({
                                 x: randomLeaf.relX + currentTreeX,
                                 y: randomLeaf.relY,
-                                size: Math.random() * 3 + 4,
-                                vy: Math.random() * 0.6 + 0.8,
-                                vx: (Math.random() - 0.4) * 0.3,
+                                size: Math.random() * 2.5 + 3.5,
+                                vy: Math.random() * 0.4 + 0.6, // Slow soothing drift
+                                vx: (Math.random() - 0.5) * 0.25,
                                 color: leafColors[Math.floor(Math.random() * leafColors.length)]
                             });
                         }
@@ -390,7 +440,7 @@
                         let p = continuousFallingHearts[i];
                         p.y += p.vy;
                         p.x += p.vx;
-
+                        
                         drawCanvasHeart(p.x, p.y, p.size, p.color);
 
                         if (p.y >= groundY) {
