@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Birthday Prachi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body, html {
+            background-color: #000000;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            position: relative;
+        }
+        #ui-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: flex-end;
+            cursor: pointer;
+            padding-bottom: 20px;
+            transition: opacity 0.4s ease;
+            z-index: 10;
+        }
+        .heart-btn {
+            width: 65px;
+            height: 65px;
+            background-color: #ffb7c5;
+            position: relative;
+            transform: rotate(-45deg);
+            animation: beat 1.8s infinite ease-in-out;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        .heart-btn::before, .heart-btn::after {
+            content: '';
+            width: 65px;
+            height: 65px;
+            background-color: #ffb7c5;
+            border-radius: 50%;
+            position: absolute;
+        }
+        .heart-btn::before { top: -32px; left: 0; }
+        .heart-btn::after { left: 32px; top: 0; }
+
+        @keyframes beat {
+            0%, 100% { transform: scale(1) rotate(-45deg); }
+            50% { transform: scale(1.08) rotate(-45deg); }
+        }
+        .text-container {
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            border-bottom: 3px solid #ffb7c5;
+            padding-right: 40px;
+            padding-bottom: 5px;
+        }
+        .text-line1 {
+            font-size: 20px;
+            font-weight: 400;
+            margin-bottom: 3px;
+            letter-spacing: 0.5px;
+        }
+        .text-line2 {
+            font-size: 22px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+        }
+        #message-panel {
+            position: absolute;
+            left: 8%;
+            top: 15%;
+            width: 45%;
+            height: 70%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 5;
+            color: #ffffff;
+        }
+        .msg-line {
+            font-size: 17px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+            font-weight: 400;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            color: #fff0f3;
+        }
+        .msg-line.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .msg-highlight {
+            color: #ffb7c5;
+            font-weight: 600;
+            font-size: 22px;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" src="music.mp3" loop></audio>
+
+    <div id="ui-container">
+        <div class="heart-btn"></div>
+        <div class="text-container">
+            <span class="text-line1">Click Me:)</span>
+            <span class="text-line2">Birthday Queen !</span>
+        </div>
+    </div>
+
+    <div id="message-panel">
+        <div class="msg-line msg-highlight" id="msg1">Hey Prachi..❣️</div>
+        <div class="msg-line" id="msg2">Happy Birthday..🎂</div>
+        <div class="msg-line" id="msg3">May God bless you with endless happiness and success..💫</div>
+        <div class="msg-line" id="msg4">Just saying… Maybe God made you extra special, because people like you are rare..🤌</div>
+        <div class="msg-line" id="msg5">Hope your day is as cute and amazing as you are..😘</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const uiContainer = document.getElementById('ui-container');
+        const bgMusic = document.getElementById('bgMusic');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log(err.message);
+            }
+        }
+        window.addEventListener('load', requestWakeLock);
+
+        let state = 'waiting';
+        let fallingHeart = { x: 0, y: 0, vy: 0, gravity: 0.5, size: 22 };
+        let groundY = canvas.height * 0.85;
+
+        let treeCenterX = canvas.width / 2;
+        let currentTreeX = canvas.width / 2;
+        let targetTreeX = canvas.width * 0.72;
+        let shiftProgress = 0;
+
+        let branches = [];
+        let leaves = [];
+        let continuousFallingHearts = [];
+        const leafColors = ['#ff4d6d', '#ff758f', '#ff85a1', '#f72585', '#ffb7c5', '#ffbe0b', '#ff007f'];
+
+        function drawCanvasHeart(x, y, size, color) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.translate(x, y);
+            ctx.rotate(-Math.PI / 4);
+            ctx.fillStyle = color;
+            ctx.moveTo(0, 0);
+            ctx.arc(size / 2, 0, size / 2, 0, Math.PI, true);
+            ctx.arc(0, -size / 2, size / 2, 0, Math.PI, true);
+            ctx.lineTo(0, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        uiContainer.addEventListener('click', () => {
+            if (state !== 'waiting') return;
+
+            bgMusic.play().catch(e => console.log(e));
+
+            uiContainer.style.opacity = '0';
+            setTimeout(() => uiContainer.style.display = 'none', 400);
+
+            fallingHeart.x = canvas.width / 2;
+            fallingHeart.y = canvas.height / 2;
+            fallingHeart.vy = 1;
+
+            state = 'falling';
+            animate();
+        });
+
+        class Branch {
+            constructor(startX, startY, endX, endY, maxThickness, duration) {
+                this.startX = startX;
+                this.startY = startY;
+                this.endX = endX;
+                this.endY = endY;
+                this.maxThickness = maxThickness;
+                this.duration = duration;
+                this.currentFrame = 0;
+                this.currentX = startX;
+                this.currentY = startY;
+                this.done = false;
+            }
+            update() {
+                if (this.currentFrame < this.duration) {
+                    this.currentFrame++;
+                    let t = this.currentFrame / this.duration;
+                    this.currentX = this.startX + (this.endX - this.startX) * t;
+                    this.currentY = this.startY + (this.endY - this.startY) * t;
+                } else {
+                    this.done = true;
+                }
+            }
+            draw(offsetX) {
+                ctx.beginPath();
+                ctx.moveTo(this.startX + offsetX, this.startY);
+                ctx.lineTo(this.currentX + offsetX, this.currentY);
+                ctx.strokeStyle = '#ffb7c5';
+                let progress = this.currentFrame / this.duration;
+                ctx.lineWidth = this.maxThickness * (1 - progress * 0.25);
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        }
+
+        class Leaf {
+            constructor(relX, relY, targetSize, color, delay) {
+                this.relX = relX;
+                this.relY = relY;
+                this.targetSize = targetSize;
+                this.currentSize = 0;
+                this.color = color;
+                this.delay = delay;
+            }
+            update() {
+                if (this.delay > 0) {
+                    this.delay--;
+                    return;
+                }
+                if (this.currentSize < this.targetSize) {
+                    this.currentSize += 0.5;
+                }
+            }
+            draw(offsetX) {
+                if (this.currentSize > 0) {
+                    drawCanvasHeart(this.relX + offsetX, this.relY, this.currentSize, this.color);
+                }
+            }
+        }
+
+        function generateTreeData(startX, startY, length, angle, thickness, depth) {
+            if (depth === 0) return;
+
+            let endX = startX + Math.cos(angle) * length;
+            let endY = startY + Math.sin(angle) * length;
+
+            let relStartX = startX - treeCenterX;
+            let relEndX = endX - treeCenterX;
+
+            branches.push(new Branch(relStartX, startY, relEndX, endY, thickness, 15 + depth * 3));
+
+            if (depth <= 4) {
+                let clusterCount = (5 - depth) * 5;
+                for (let i = 0; i < clusterCount; i++) {
+                    let rx = relEndX + (Math.random() - 0.5) * 40;
+                    let ry = endY + (Math.random() - 0.5) * 40;
+                    let size = Math.random() * 4 + 5;
+                    let color = leafColors[Math.floor(Math.random() * leafColors.length)];
+                    let delay = Math.random() * 30;
+                    leaves.push(new Leaf(rx, ry, size, color, delay));
+                }
+            }
+
+            let numBranches = 3;
+            for (let i = 0; i < numBranches; i++) {
+                let angleVariation = (Math.random() - 0.5) * 0.55;
+                let nextAngle = angle + (i - 1) * 0.42 + angleVariation;
+                let nextLength = length * (0.7 + Math.random() * 0.1);
+                generateTreeData(endX, endY, nextLength, nextAngle, thickness * 0.65, depth - 1);
+            }
+        }
+
+        function startLeftMessagesTimeline() {
+            const delays = [200, 2800, 5600, 8800, 11800];
+            for (let i = 1; i <= 5; i++) {
+                setTimeout(() => {
+                    const el = document.getElementById(`msg${i}`);
+                    if (el) el.classList.add('visible');
+                }, delays[i - 1]);
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath();
+            ctx.moveTo(canvas.width * 0.05, groundY);
+            ctx.lineTo(canvas.width * 0.95, groundY);
+            ctx.strokeStyle = '#ffb7c5';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            if (state === 'falling') {
+                fallingHeart.vy += fallingHeart.gravity;
+                fallingHeart.y += fallingHeart.vy;
+
+                if (fallingHeart.y >= groundY) {
+                    fallingHeart.y = groundY;
+                    state = 'growing';
+                    generateTreeData(treeCenterX, groundY, canvas.height * 0.16, -Math.PI / 2, 11, 6);
+                }
+                drawCanvasHeart(fallingHeart.x, fallingHeart.y, fallingHeart.size, '#ffb7c5');
+            }
+
+            if (state === 'growing' || state === 'blooming' || state === 'shifting' || state === 'finished') {
+                let allBranchesDone = true;
+
+                branches.forEach(b => {
+                    b.update();
+                    b.draw(currentTreeX);
+                    if (!b.done) allBranchesDone = false;
+                });
+
+                if (allBranchesDone && state === 'growing') {
+                    state = 'blooming';
+                }
+
+                let allLeavesDone = true;
+                leaves.forEach(l => {
+                    if (state !== 'growing') l.update();
+                    l.draw(currentTreeX);
+                    if (l.currentSize < l.targetSize) allLeavesDone = false;
+                });
+
+                if (allBranchesDone && allLeavesDone && state === 'blooming') {
+                    state = 'shifting';
+                }
+
+                if (state === 'shifting') {
+                    if (shiftProgress < 1) {
+                        shiftProgress += 0.025;
+                        let ease = shiftProgress < 0.5 ? 2 * shiftProgress * shiftProgress : -1 + (4 - 2 * shiftProgress) * shiftProgress;
+                        currentTreeX = treeCenterX + (targetTreeX - treeCenterX) * ease;
+                    } else {
+                        currentTreeX = targetTreeX;
+                        state = 'finished';
+                        startLeftMessagesTimeline();
+                    }
+                }
+
+                if (state === 'shifting' || state === 'finished') {
+                    if (continuousFallingHearts.length < 5 && Math.random() < 0.04) {
+                        let randomLeaf = leaves[Math.floor(Math.random() * leaves.length)];
+                        if (randomLeaf && randomLeaf.currentSize >= randomLeaf.targetSize) {
+                            continuousFallingHearts.push({
+                                x: randomLeaf.relX + currentTreeX,
+                                y: randomLeaf.relY,
+                                size: Math.random() * 3 + 4,
+                                vy: Math.random() * 0.6 + 0.8,
+                                vx: (Math.random() - 0.4) * 0.3,
+                                color: leafColors[Math.floor(Math.random() * leafColors.length)]
+                            });
+                        }
+                    }
+
+                    for (let i = continuousFallingHearts.length - 1; i >= 0; i--) {
+                        let p = continuousFallingHearts[i];
+                        p.y += p.vy;
+                        p.x += p.vx;
+
+                        drawCanvasHeart(p.x, p.y, p.size, p.color);
+
+                        if (p.y >= groundY) {
+                            continuousFallingHearts.splice(i, 1);
+                        }
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+</html>
