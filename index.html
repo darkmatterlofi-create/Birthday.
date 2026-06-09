@@ -19,28 +19,33 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             position: relative;
         }
-        /* Scene 1 Layout - Match Image Exactly */
+        
+        /* Scene 1 Layout - Replicating 1000088972_3.png Exactly */
         #ui-container {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             display: flex;
-            align-items: flex-start;
+            align-items: flex-end;
             cursor: pointer;
             z-index: 10;
             transition: opacity 0.5s ease;
-            width: 320px;
+            width: 340px;
+        }
+        .heart-wrapper {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            flex-shrink: 0;
         }
         .heart-btn {
             width: 60px;
             height: 60px;
             background-color: #ffb7c5;
-            position: relative;
+            position: absolute;
             transform: rotate(-45deg);
             animation: beat 1.8s infinite ease-in-out;
-            flex-shrink: 0;
-            margin-top: -15px; /* Alignment adjustment */
         }
         .heart-btn::before, .heart-btn::after {
             content: '';
@@ -58,25 +63,25 @@
             50% { transform: scale(1.06) rotate(-45deg); }
         }
         
-        /* Custom Angular Line Layout from User Image */
-        .design-wrapper {
-            position: relative;
+        /* Content Panel Layout matching the image exactly */
+        .content-panel {
             display: flex;
             flex-direction: column;
             width: 100%;
-            margin-left: 10px;
+            margin-left: -5px; /* Pulls the line path start perfectly into the heart edge */
+            position: relative;
         }
         .text-box {
             display: flex;
             flex-direction: column;
             color: #ffffff;
-            padding-left: 5px;
-            margin-bottom: 5px;
+            padding-left: 15px; /* Creates safe gap so text never overlaps the heart */
+            margin-bottom: 2px;
         }
         .text-line1 {
             font-size: 19px;
             font-weight: 400;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
             letter-spacing: 0.5px;
         }
         .text-line2 {
@@ -85,11 +90,13 @@
             letter-spacing: 0.5px;
             white-space: nowrap;
         }
-        /* The Exact Geometric Shape Component */
+        
+        /* Exact SVG Line Connection Design from 1000088972_3.png */
         .custom-wireframe {
             position: relative;
-            width: 250px;
+            width: 280px;
             height: 25px;
+            margin-top: -12px; /* Pulls line up to align perfectly with heart's lower-right quadrant */
         }
         .custom-wireframe svg {
             position: absolute;
@@ -99,7 +106,7 @@
             height: 100%;
         }
 
-        /* Canvas Layer */
+        /* Canvas Render Frame */
         canvas {
             position: absolute;
             top: 0;
@@ -109,7 +116,8 @@
             display: block;
             z-index: 1;
         }
-        /* Left Side Messages Display Container */
+        
+        /* Left Messages Panel Design */
         #message-panel {
             position: absolute;
             left: 8%;
@@ -129,7 +137,7 @@
             font-weight: 400;
             opacity: 0;
             transform: translateY(10px);
-            transition: opacity 1s ease, transform 1s ease;
+            transition: opacity 1.5s ease, transform 1.5s ease;
             color: #fff0f3;
             text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.9);
         }
@@ -148,16 +156,20 @@
 
     <audio id="bgMusic" src="music.mp3" loop></audio>
 
+    <!-- UI Overlay matching 1000088972_3.png -->
     <div id="ui-container">
-        <div class="heart-btn"></div>
-        <div class="design-wrapper">
+        <div class="heart-wrapper">
+            <div class="heart-btn"></div>
+        </div>
+        <div class="content-panel">
             <div class="text-box">
                 <span class="text-line1">Click Me:)</span>
                 <span class="text-line2">Birthday Queen !</span>
             </div>
             <div class="custom-wireframe">
-                <svg viewBox="0 0 250 25" preserveAspectRatio="none">
-                    <path d="M 0 0 L 15 15 L 250 15" stroke="#ffb7c5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <!-- SVG path starting from heart tip area, bending down-right, then straight right -->
+                <svg viewBox="0 0 280 25" preserveAspectRatio="none">
+                    <path d="M 0 0 L 18 18 L 280 18" stroke="#ffb7c5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
                 </svg>
             </div>
         </div>
@@ -186,33 +198,14 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Screen Wake Lock Mechanism to keep mobile screen constantly active
-        let wakeLock = null;
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) {
-                console.log(err.message);
-            }
-        }
-        window.addEventListener('load', requestWakeLock);
-        document.addEventListener('visibilitychange', () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                requestWakeLock();
-            }
-        });
-
-        // Application State Management
-        let state = 'waiting'; // waiting -> falling -> growing -> blooming -> shifting -> finished
+        let state = 'waiting'; 
+        let animationStartTime = 0;
         let fallingHeart = { x: 0, y: 0, vy: 0, gravity: 0.4, size: 22 };
         let groundY = canvas.height * 0.85;
         
         let treeCenterX = canvas.width / 2;
         let currentTreeX = canvas.width / 2;
-        let targetTreeX = canvas.width * 0.82; // Completely clear space for text
-        let shiftProgress = 0;
+        let targetTreeX = canvas.width * 0.82; 
 
         let branches = [];
         let leaves = [];
@@ -236,8 +229,7 @@
 
         uiContainer.addEventListener('click', () => {
             if (state !== 'waiting') return;
-            
-            bgMusic.play().catch(e => console.log("Audio trigger interaction failed:", e));
+            bgMusic.play().catch(e => console.log(e));
 
             uiContainer.style.opacity = '0';
             setTimeout(() => uiContainer.style.display = 'none', 500);
@@ -247,70 +239,58 @@
             fallingHeart.vy = 1;
             
             state = 'falling';
-            animate();
+            requestAnimationFrame(animate);
         });
 
         class Branch {
-            constructor(startX, startY, endX, endY, maxThickness, duration) {
+            constructor(startX, startY, endX, endY, maxThickness, growStart, growDuration) {
                 this.startX = startX;
                 this.startY = startY;
                 this.endX = endX;
                 this.endY = endY;
                 this.maxThickness = maxThickness;
-                this.duration = duration; // Increased for romantic slow effect
-                this.currentFrame = 0;
-                this.currentX = startX;
-                this.currentY = startY;
-                this.done = false;
+                this.growStart = growStart;      
+                this.growDuration = growDuration;
             }
-            update() {
-                if (this.currentFrame < this.duration) {
-                    this.currentFrame++;
-                    let t = this.currentFrame / this.duration;
-                    this.currentX = this.startX + (this.endX - this.startX) * t;
-                    this.currentY = this.startY + (this.endY - this.startY) * t;
-                } else {
-                    this.done = true;
-                }
-            }
-            draw(offsetX) {
+            draw(offsetX, elapsed) {
+                if (elapsed < this.growStart) return; 
+                let progress = Math.min((elapsed - this.growStart) / this.growDuration, 1);
+                
+                let curX = this.startX + (this.endX - this.startX) * progress;
+                let curY = this.startY + (this.endY - this.startY) * progress;
+
                 ctx.beginPath();
                 ctx.moveTo(this.startX + offsetX, this.startY);
-                ctx.lineTo(this.currentX + offsetX, this.currentY);
+                ctx.lineTo(curX + offsetX, curY);
                 ctx.strokeStyle = '#ffb7c5';
-                let progress = this.currentFrame / this.duration;
-                ctx.lineWidth = this.maxThickness * (1 - progress * 0.25);
+                ctx.lineWidth = this.maxThickness * (1 - progress * 0.2);
                 ctx.lineCap = 'round';
                 ctx.stroke();
             }
         }
 
         class Leaf {
-            constructor(relX, relY, targetSize, color, delay) {
+            constructor(relX, relY, targetSize, color, bloomStart, bloomDuration) {
                 this.relX = relX; 
                 this.relY = relY;
                 this.targetSize = targetSize;
-                this.currentSize = 0;
                 this.color = color;
-                this.delay = delay; // Multiplied delay factor for slow beautiful bloom
+                this.bloomStart = bloomStart;
+                this.bloomDuration = bloomDuration;
             }
-            update() {
-                if (this.delay > 0) {
-                    this.delay--;
-                    return;
-                }
-                if (this.currentSize < this.targetSize) {
-                    this.currentSize += 0.08; // Extremely slow growth speed for perfect aesthetics
-                }
-            }
-            draw(offsetX) {
-                if (this.currentSize > 0) {
-                    drawCanvasHeart(this.relX + offsetX, this.relY, this.currentSize, this.color);
+            draw(offsetX, elapsed) {
+                if (elapsed < this.bloomStart) return;
+                let progress = Math.min((elapsed - this.bloomStart) / this.bloomDuration, 1);
+                let curSize = this.targetSize * progress;
+
+                if (curSize > 0) {
+                    drawCanvasHeart(this.relX + offsetX, this.relY, curSize, this.color);
                 }
             }
         }
 
-        function generateTreeData(startX, startY, length, angle, thickness, depth) {
+        // Expanded tree architecture configuration mapped over an 11-Minute timeframe
+        function buildTreeStructure(startX, startY, length, angle, thickness, depth, currentDelay) {
             if (depth === 0) return;
 
             let endX = startX + Math.cos(angle) * length;
@@ -319,35 +299,39 @@
             let relStartX = startX - treeCenterX;
             let relEndX = endX - treeCenterX;
 
-            // Slow growth duration assigned to branches
-            let branchDuration = 45 + (7 - depth) * 15; 
-            branches.push(new Branch(relStartX, startY, relEndX, endY, thickness, branchDuration));
+            // Highly extended scale timing configurations for an 11-minute total lifespan
+            let branchGrowTime = 25000 + (7 - depth) * 8000; 
+            branches.push(new Branch(relStartX, startY, relEndX, endY, thickness, currentDelay, branchGrowTime));
+
+            let nextDelay = currentDelay + branchGrowTime * 0.55;
 
             if (depth <= 4) {
-                let clusterCount = (5 - depth) * 4;
-                for (let i = 0; i < clusterCount; i++) {
+                let leavesCount = (5 - depth) * 4;
+                for (let i = 0; i < leavesCount; i++) {
                     let rx = relEndX + (Math.random() - 0.5) * 45;
                     let ry = endY + (Math.random() - 0.5) * 45;
                     let size = Math.random() * 3 + 4.5;
                     let color = leafColors[Math.floor(Math.random() * leafColors.length)];
-                    // Staggered long delays for real premium look
-                    let delay = (5 - depth) * 45 + Math.random() * 120; 
-                    leaves.push(new Leaf(rx, ry, size, color, delay));
+                    
+                    // Staggered slow blooming sequence starts
+                    let leafStart = currentDelay + branchGrowTime + Math.random() * 180000; 
+                    let leafBloomDuration = 40000 + Math.random() * 30000;
+                    leaves.push(new Leaf(rx, ry, size, color, leafStart, leafBloomDuration));
                 }
             }
 
-            let numBranches = 3;
-            for (let i = 0; i < numBranches; i++) {
-                let angleVariation = (Math.random() - 0.5) * 0.55;
-                let nextAngle = angle + (i - 1) * 0.42 + angleVariation;
+            let branchesNum = 3;
+            for (let i = 0; i < branchesNum; i++) {
+                let vAngle = (Math.random() - 0.5) * 0.55;
+                let nextAngle = angle + (i - 1) * 0.42 + vAngle;
                 let nextLength = length * (0.72 + Math.random() * 0.08);
-                generateTreeData(endX, endY, nextLength, nextAngle, thickness * 0.65, depth - 1);
+                buildTreeStructure(endX, endY, nextLength, nextAngle, thickness * 0.65, depth - 1, nextDelay);
             }
         }
 
-        // Sequential text displaying adjusted nicely inside the timeline
-        function startLeftMessagesTimeline() {
-            const delays = [200, 2500, 5000, 7800, 10500]; 
+        // Messages timeline calibrated to run over exactly 9 Minutes (540,000 Milliseconds)
+        function triggerTextTimeline() {
+            const delays = [0, 108000, 216000, 324000, 432000]; 
             for (let i = 1; i <= 5; i++) {
                 setTimeout(() => {
                     const el = document.getElementById(`msg${i}`);
@@ -356,11 +340,13 @@
             }
         }
 
-        function animate() {
+        function animate(timestamp) {
+            if (!animationStartTime) animationStartTime = timestamp;
+            let elapsed = timestamp - animationStartTime;
+
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Base straight horizontal setup ground border line
             ctx.beginPath();
             ctx.moveTo(canvas.width * 0.05, groundY);
             ctx.lineTo(canvas.width * 0.95, groundY);
@@ -368,68 +354,46 @@
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
-            // 1. FALLING STATE
             if (state === 'falling') {
                 fallingHeart.vy += fallingHeart.gravity;
                 fallingHeart.y += fallingHeart.vy;
 
                 if (fallingHeart.y >= groundY) {
                     fallingHeart.y = groundY;
-                    state = 'growing';
-                    // Deep 6 level hierarchy for thick premium foliage distribution
-                    generateTreeData(treeCenterX, groundY, canvas.height * 0.15, -Math.PI / 2, 10.5, 6);
+                    state = 'runningTimeline';
+                    animationStartTime = timestamp; 
+                    elapsed = 0;
+                    buildTreeStructure(treeCenterX, groundY, canvas.height * 0.15, -Math.PI / 2, 10.5, 6, 0);
                 }
                 drawCanvasHeart(fallingHeart.x, fallingHeart.y, fallingHeart.size, '#ffb7c5');
             }
 
-            // 2. RENDERING TREE ARCHITECTURE STATES
-            if (state === 'growing' || state === 'blooming' || state === 'shifting' || state === 'finished') {
-                let allBranchesDone = true;
-
-                branches.forEach(b => {
-                    b.update();
-                    b.draw(currentTreeX);
-                    if (!b.done) allBranchesDone = false;
-                });
-
-                if (allBranchesDone && state === 'growing') {
-                    state = 'blooming';
-                }
-
-                let allLeavesDone = true;
-                leaves.forEach(l => {
-                    if (state !== 'growing') l.update();
-                    l.draw(currentTreeX);
-                    if (l.currentSize < l.targetSize) allLeavesDone = false;
-                });
-
-                if (allBranchesDone && allLeavesDone && state === 'blooming') {
-                    state = 'shifting';
-                }
-
-                // 3. SMOOTH RIGHT SIDE SHIFT STATE
-                if (state === 'shifting') {
-                    if (shiftProgress < 1) {
-                        shiftProgress += 0.015; // Smooth cinematic ease speed
-                        let ease = shiftProgress < 0.5 ? 2 * shiftProgress * shiftProgress : -1 + (4 - 2 * shiftProgress) * shiftProgress;
-                        currentTreeX = treeCenterX + (targetTreeX - treeCenterX) * ease;
-                    } else {
-                        currentTreeX = targetTreeX;
-                        state = 'finished';
-                        startLeftMessagesTimeline(); 
+            if (state === 'runningTimeline') {
+                
+                // CONTROL TIMELINE: Tree grows & slides up until the 11th Minute (660,000 ms) mark
+                if (elapsed >= 600000 && elapsed < 660000) { // Sliding shifts smoothly between 10th and 11th minute
+                    let slideProgress = (elapsed - 600000) / 60000;
+                    let ease = slideProgress < 0.5 ? 2 * slideProgress * slideProgress : -1 + (4 - 2 * slideProgress) * slideProgress;
+                    currentTreeX = treeCenterX + (targetTreeX - treeCenterX) * ease;
+                } else if (elapsed >= 660000) {
+                    currentTreeX = targetTreeX;
+                    if (elapsed >= 660000 && elapsed < 660100) {
+                        triggerTextTimeline(); // Text message layer initializes at exactly 11:00
                     }
                 }
 
-                // 4. CONTINUOUS SLOW FALLING HEARTS FROM TREE (4-5 Active Hearts Loop)
-                if (state === 'shifting' || state === 'finished') {
-                    if (continuousFallingHearts.length < 5 && Math.random() < 0.03) {
+                branches.forEach(b => b.draw(currentTreeX, elapsed));
+                leaves.forEach(l => l.draw(currentTreeX, elapsed));
+
+                if (elapsed >= 620000) {
+                    if (continuousFallingHearts.length < 5 && Math.random() < 0.04) {
                         let randomLeaf = leaves[Math.floor(Math.random() * leaves.length)];
-                        if (randomLeaf && randomLeaf.currentSize >= randomLeaf.targetSize) {
+                        if (randomLeaf) {
                             continuousFallingHearts.push({
                                 x: randomLeaf.relX + currentTreeX,
                                 y: randomLeaf.relY,
                                 size: Math.random() * 2.5 + 3.5,
-                                vy: Math.random() * 0.4 + 0.6, // Slow soothing drift
+                                vy: Math.random() * 0.4 + 0.6,
                                 vx: (Math.random() - 0.5) * 0.25,
                                 color: leafColors[Math.floor(Math.random() * leafColors.length)]
                             });
